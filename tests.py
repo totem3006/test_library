@@ -114,34 +114,116 @@ class AuthorTestCase(unittest.TestCase):
         self.assertEqual('test_005_update_single_field', author_name)
         self.assertEqual('newdescription005', author_description)
 
-    def test_006_update_with_empty_data(self):
-        author = self.add_author('test_006_update_with_empty_data')
+    ########################################################
+    def test_006_update_bad_requests_400(self):
+        author = self.add_author('test_006_update_bad_requests_400')
         author_id=author.id
 
         url = '/authors/{id:d}/'.format(id=author.id)
-        data = { }
+
+        datas = [
+            {},
+            {'name': 'newname006', 'description': 'newdescription006', 'whoiam': 'lalala'},
+            {'name': None, },
+            {'description': None, },
+        ]
+
+        for data in datas:
+            response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+            self.assertEqual(400, response.status_code)
+            author = AuthorModel.query.filter_by(id=author_id).first()
+
+            self.assertIsNotNone(author)
+            self.assertEqual('test_006_update_bad_requests_400', author.name)
+            self.assertEqual('test_006_update_bad_requests_400', author.description)
+
+
+    def test_009_update_nonexisting_author(self):
+        author = AuthorModel.query.order_by('id')[-1]
+        non_existing_id = author.id + 1
+        url = '/authors/{id:d}/'.format(id=non_existing_id)
+
+        data = {'name': 'NewName009', }
         response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
 
+        self.assertEqual(404, response.status_code)
+
+    def test_010_delete_200(self):
+        author = self.add_author('test_010_delete_200')
+
+        url = '/authors/{id:d}/'.format(id=author.id)
+        response = self.app.delete(url, follow_redirects=True)
+
+        self.assertEqual(200, response.status_code)
+
+    def test_011_successfully_delete(self):
+        author = self.add_author('test_011_successfully_delete')
+        author_id = author.id
+
+        url = '/authors/{id:d}/'.format(id=author.id)
+        response = self.app.delete(url, follow_redirects=True)
+
+        author = AuthorModel.query.filter_by(id=author_id).first()
+
+        self.assertIsNone(author)
+
+    def test_012_delete_unexising_user(self):
+        author = AuthorModel.query.order_by('id')[-1]
+        non_existing_id = author.id + 1
+        url = '/authors/{id:d}/'.format(id=non_existing_id)
+
+        data = {'name': 'NewName009', }
+        response = self.app.delete(url, follow_redirects=True)
+
+        self.assertEqual(404, response.status_code)
+
+
+    def test_013_post_good_params_and_200(self):
+        url = '/authors/new/'
+
+        data = {'name': 'test_013_post_good_params_and_200', 'description': 'test_013_post_good_params_and_200'}
+        response = self.app.post(url, data=json.dumps(data), follow_redirects=True)
+
+        self.assertEqual(200, response.status_code)
+
+        new_object_id = int(response.data)
+
+        author = AuthorModel.query.filter_by(id=new_object_id).first()
+        self.assertIsNotNone(author)
+
+        self.assertEqual('test_013_post_good_params_and_200', author.name)
+        self.assertEqual('test_013_post_good_params_and_200', author.description)
+
+    def test_014_bad_requests_examples(self):
+        url = '/authors/new/'
+
+        datas = [
+            {},
+            {'name': 'test_013_post_good_params_and_200', },
+            {'description': 'test_013_post_good_params_and_200', },
+            {'name': None, 'description': 'test_013_post_good_params_and_200', },
+            {'name': 'test_013_post_good_params_and_200', 'description': None, },
+            {'invalid_param': 'zzzz', 'description': 'test_013_post_good_params_and_200'}
+        ]
+
+        for data in datas:
+            response = self.app.post(url, data=json.dumps(data), follow_redirects=True)
+            self.assertEqual(400, response.status_code)
+
+    def test_015_non_json_for_put_and_post(self):
+        url = '/authors/new/'
+
+        data = 'It\'s not a json'
+        response = self.app.post(url, data=data, follow_redirects=True)
         self.assertEqual(400, response.status_code)
 
-    def test_007_update_invalid_param(self):
-        author = self.add_author('test_007_update_invalid_param')
+        author = self.add_author('test_015_non_json_for_put_and_post')
         author_id=author.id
 
-        url = '/authors/{id:d}/'.format(id=author.id)
-        data = {'name': 'newname006', 'description': 'newdescription006', 'whoiam': 'lalala'}
-        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
-
-        self.assertEqual(400, response.status_code)
-
-    def test_008_update_nullable_field_check(self):
-        author = self.add_author('test_008_update_bad_name_length')
-        author_id=author.id
-
-        url = '/authors/{id:d}/'.format(id=author.id)
-        data = {'name': None, }
-        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
-
+        # update name
+        url = '/authors/{id:d}/'.format(id=author_id)
+        response = self.app.put(url, data=data, follow_redirects=True)
         self.assertEqual(400, response.status_code)
 
 if __name__ == '__main__':
