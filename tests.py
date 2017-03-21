@@ -13,7 +13,6 @@ from application.models import db_session
 from application.models import AuthorModel
 
 
-
 class AuthorTestCase(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
