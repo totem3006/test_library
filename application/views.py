@@ -107,6 +107,13 @@ class AuthorAPI(MethodView):
 
 class BookAPI(MethodView):
     def get(self, book_id):
+        book = BookModel.query.filter_by(id=book_id).first()
+
+        if book is None:
+            return 'Book not found', 404
+
+        # related_authors = M2M.filter
+
         return '', 500
     def delete(self, book_id):
         return '', 500
