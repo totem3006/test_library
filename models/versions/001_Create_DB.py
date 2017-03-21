@@ -9,14 +9,14 @@ meta = MetaData()
 Author = Table(
     'Author', meta,
     Column('id', Integer, primary_key=True),
-    Column('name', String(255)),
-    Column('description', Text(), default=''),
+    Column('name', String(255), nullable=False),
+    Column('description', Text(), default='', nullable=False),
 )
 Book = Table(
     'Book', meta,
     Column('id', Integer, primary_key=True),
-    Column('name', String(255)),
-    Column('description', Text(), default=''),
+    Column('name', String(255), nullable=False),
+    Column('description', Text(), default='', nullable=False),
 )
 M2M = Table(
     'M2M', meta,
