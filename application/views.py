@@ -105,6 +105,16 @@ class AuthorAPI(MethodView):
         return msg, 200
 
 
+class BookAPI(MethodView):
+    def get(self, book_id):
+        return '', 500
+    def delete(self, book_id):
+        return '', 500
+    def put(self, book_id):
+        return '', 500
+    def post(self):
+        return '', 500
+
 author_api_view = AuthorAPI.as_view(b'authors')
 app.add_url_rule(
     '/authors/new/',
@@ -115,4 +125,15 @@ app.add_url_rule(
     '/authors/<int:author_id>/',
     view_func=author_api_view,
     methods=['GET', 'PUT', 'DELETE']
+)
+
+book_api_view = BookAPI.as_view(b'book')
+app.add_url_rule(
+    '/book/<int:book_id>/',
+    view_func=book_api_view,
+    methods=['GET', 'PUT', 'DELETE']
+)app.add_url_rule(
+    '/book/new/',
+    view_func=book_api_view,
+    methods=['POST']
 )
