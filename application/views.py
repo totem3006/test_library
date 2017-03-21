@@ -7,7 +7,7 @@ from flask import request
 from flask.views import MethodView
 
 from application import app
-from application.models import AuthorModel, BookModel, M2M, db_session
+from application.models import AuthorModel, BookModel, db_session
 
 @app.route('/')
 def index():
@@ -101,8 +101,7 @@ class AuthorAPI(MethodView):
         db_session.add(author)
         db_session.commit()
 
-        msg = '%d' % author.id
-        return msg, 200
+        return str(author.id), 200
 
 
 class BookAPI(MethodView):
@@ -112,14 +111,56 @@ class BookAPI(MethodView):
         if book is None:
             return 'Book not found', 404
 
-        # related_authors = M2M.filter
+        return book.to_JSON(), 200
 
-        return '', 500
     def delete(self, book_id):
-        return '', 500
-    def put(self, book_id):
-        return '', 500
+        book = BookModel.query.filter_by(id=book_id)
+
+        if book.first() is None:
+            return 'Book not found', 404
+
+        book.delete()
+
+        db_session.commit()
+
+        return 'Ok', 200
+
     def post(self):
+        try:
+            request_data = json.loads(request.data)
+        except ValueError:
+            return 'Invalid request body', 400
+
+        if not request_data:
+            return 'Empty request', 400
+
+
+        if len(request_data) != 3 or \
+            'name' not in request_data or \
+            request_data['name'] is None or \
+            'description' not in request_data or \
+            request_data['description'] is None or \
+            'authors' not in request_data or \
+            request_data['authors'] is None:
+            return 'Invalid request data', 400
+
+        book = BookModel(name=request_data['name'], description=request_data['description'])
+        db_session.add(book)
+
+        for author_id in request_data['authors']:
+            author = AuthorModel.query.filter_by(id=author_id).first()
+
+            if author is None:
+                msg = 'Author %d doesn\'t exist' % author_id
+                db_session.rollback()
+                return msg, 404
+            book.authors.append(author)
+
+        db_session.commit()
+
+        return str(book.id), 200
+
+    def put(self, book_id):
         return '', 500
 
 author_api_view = AuthorAPI.as_view(b'authors')
@@ -139,7 +180,8 @@ app.add_url_rule(
     '/book/<int:book_id>/',
     view_func=book_api_view,
     methods=['GET', 'PUT', 'DELETE']
-)app.add_url_rule(
+)
+app.add_url_rule(
     '/book/new/',
     view_func=book_api_view,
     methods=['POST']
