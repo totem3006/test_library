@@ -2,5 +2,7 @@
 
 from __future__ import unicode_literals
 
+from application import app
+
 if __name__ == "__main__":
     app.run()

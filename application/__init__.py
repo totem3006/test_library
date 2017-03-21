@@ -9,4 +9,4 @@ app = Flask(config.PROJECT_NAME)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 
-from . import views, models
+from application import views, models
