@@ -14,7 +14,13 @@ def index():
 
 class AuthorAPI(MethodView):
     def get(self, author_id):
-        return str(author_id)
+        author = AuthorModel.query.filter_by(id=author_id).first()
+
+        if author is None:
+            error_msg = 'User %d doest\'t exist' % int(author_id)
+            return error_msg, 404
+
+        return author.to_JSON(), 200
 
 
 author_api_view = AuthorAPI.as_view(b'authors')
