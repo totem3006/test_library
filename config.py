@@ -10,3 +10,4 @@ DB_FILENAME = os.path.join(PROJECT_DIR, 'project.db')
 SQLALCHEMY_DATABASE_URI = 'sqlite:///{filename:s}'.format(filename=DB_FILENAME)
 SQLALCHEMY_MIGRATE_REPO = os.path.join(PROJECT_DIR, 'models')
 SQLALCHEMY_TRACK_MODIFICATIONS = True
+LIBRARY_PAGE_SIZE = 5

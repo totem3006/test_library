@@ -3,6 +3,9 @@
 from __future__ import unicode_literals
 
 import json
+
+import config
+
 from flask import request
 from flask.views import MethodView
 
@@ -204,6 +207,25 @@ class BookAPI(MethodView):
         db_session.commit()
 
         return 'Ok', 200
+
+
+@app.route('/library/', methods = ['GET', ])
+@app.route('/library/<int:page>/', methods = ['GET', ])
+def library_api(page = 1):
+    response = BookModel.query.order_by('id')\
+                              .offset((page - 1) * config.LIBRARY_PAGE_SIZE)\
+                              .limit(config.LIBRARY_PAGE_SIZE)
+
+
+    if not response.count():
+        msg = 'Books not found for page %d and page size %d' % (page, config.LIBRARY_PAGE_SIZE)
+        return msg, 404
+
+    return json.dumps(
+        [it.to_dict() for it in response],
+        ensure_ascii=False
+    ).encode('utf8')
+
 
 author_api_view = AuthorAPI.as_view(b'authors')
 app.add_url_rule(

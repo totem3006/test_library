@@ -5,6 +5,7 @@ import os
 import unittest
 import tempfile
 import json
+import random
 
 import config
 
@@ -556,6 +557,89 @@ class BookTestCase(unittest.TestCase):
 
         self.assertEqual(400, response.status_code)
 
+
+class LibraryTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.app = app.test_client()
+        AuthorModel.query.delete()
+        BookModel.query.delete()
+        BookAuthorM2M.query.delete()
+
+    def tearDown(self):
+        pass
+
+    def add_author(self, test_name):
+        author = AuthorModel(name=test_name, description=test_name)
+        db_session.add(author)
+        db_session.commit()
+
+        return author
+
+    def add_book(self, test_name, authors=[]):
+        book = BookModel(name=test_name, description=test_name)
+        db_session.add(book)
+        db_session.commit()
+
+        for author in authors:
+            book.authors.append(author)
+
+        return book
+
+    def get_nonexisting_id(self, ModelClass):
+        try:
+            last_item = ModelClass.query.order_by('id')[-1]
+            non_existing_id = last_item.id + 1
+        except IndexError:
+            non_existing_id = 1
+
+        return non_existing_id
+
+    def test_000_get_simple(self):
+        authors = map(lambda x: self.add_author(x), ['000_A1', '000_A2', '000_A3'])
+        book = self.add_book('book000', authors)
+
+        url = '/library/'
+        response = self.app.get(url, follow_redirects=True)
+
+        self.assertEqual(200 ,response.status_code)
+
+        response_data = json.loads(response.data)
+
+        self.assertEqual(1, len(response_data))
+
+    def test_001_get_more_that_one_page(self):
+        authors = map(lambda x: self.add_author(x), ['000_A1', '000_A2', '000_A3'])
+
+        for it in xrange(config.LIBRARY_PAGE_SIZE + 1):
+            book_name = 'book%03d' % it
+            book = self.add_book(book_name, authors)
+
+        url = '/library/'
+        response = self.app.get(url, follow_redirects=True)
+        self.assertEqual(200 ,response.status_code)
+        response_data = json.loads(response.data)
+        self.assertEqual(config.LIBRARY_PAGE_SIZE, len(response_data))
+
+        url = '/library/1/'
+        response = self.app.get(url, follow_redirects=True)
+        self.assertEqual(200 ,response.status_code)
+        response_data = json.loads(response.data)
+        self.assertEqual(config.LIBRARY_PAGE_SIZE, len(response_data))
+
+        url = '/library/2/'
+        response = self.app.get(url, follow_redirects=True)
+        self.assertEqual(200 ,response.status_code)
+        response_data = json.loads(response.data)
+        self.assertEqual(1, len(response_data))
+
+    def test_002_get_unexisting_page(self):
+        authors = map(lambda x: self.add_author(x), ['000_A1', '000_A2', '000_A3'])
+        book = self.add_book('book000', authors)
+
+        url = '/library/2/'
+        response = self.app.get(url, follow_redirects=True)
+        self.assertEqual(404 ,response.status_code)
 
 if __name__ == '__main__':
     unittest.main()
