@@ -159,7 +159,7 @@ class BookAPI(MethodView):
         except ValueError:
             return 'Request body is not a valid JSON', 400
 
-        if set(request_data.keys()) - {'name', 'description', 'authors'}:
+        if not request_data or (set(request_data.keys()) - {'name', 'description', 'authors'}):
             return 'Invalid request data', 400
 
         form = BookUpdateForm.from_json(request_data)
