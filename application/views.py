@@ -11,7 +11,11 @@ from flask.views import MethodView
 
 from application import app
 from application import cache
-from application.models import AuthorModel, BookModel, db_session
+from application.models import AuthorModel
+from application.models import BookModel
+from application.models import db_session
+from application.forms import AuthorCreateForm
+from application.forms import AuthorUpdateForm
 
 
 @app.route('/')
@@ -34,16 +38,7 @@ class AuthorAPI(MethodView):
         try:
             request_data = json.loads(request.data)
         except ValueError:
-            return 'Invalid request body', 400
-
-        author = AuthorModel.query.filter_by(id=author_id).first()
-
-        if author is None:
-            error_msg = 'User %d doest\'t exist' % int(author_id)
-            return error_msg, 404
-
-        if not request_data:
-            return 'Empty request', 400
+            return 'Request is not valid JSON', 400
 
         if set(request_data.keys()) - {'description', 'name'}:
             # There is a parameter differ then {'description', 'name'}
@@ -51,18 +46,21 @@ class AuthorAPI(MethodView):
                 ', '.join(set(request_data.keys()) - {'description', 'name'})
             return error_msg, 400
 
+        form = AuthorUpdateForm.from_json(request_data)
+
+        if not form.validate():
+            return 'Invalid request data', 400
+
+        author = AuthorModel.query.filter_by(id=author_id).first()
+
+        if author is None:
+            error_msg = 'User %d doest\'t exist' % int(author_id)
+            return error_msg, 404
+
         if 'name' in request_data:
-            '''
-            Object name is Column('name', String(255)),
-            but I cannot catch this exception in SQLite3
-            '''
-            if request_data['name'] is None:
-                return 'name is not nullable', 400
             author.name = request_data['name']
 
         if 'description' in request_data:
-            if request_data['description'] is None:
-                return 'description is not nullable', 400
             author.description = request_data['description']
 
         db_session.add(author)
@@ -89,18 +87,10 @@ class AuthorAPI(MethodView):
         except ValueError:
             return 'Invalid request body', 400
 
-        if not request_data:
-            return 'Empty request', 400
+        form = AuthorCreateForm.from_json(request_data)
 
-        if len(request_data.keys()) != 2 or \
-           'name' not in request_data or \
-           request_data['name'] is None or \
-           'description' not in request_data or \
-           request_data['description'] is None:
-
-            error_msg = 'Unexpected params: %s' % \
-                ', '.join(set(request_data.keys()) - {'description', 'name'})
-            return 'Bad request', 400
+        if not form.validate():
+            return 'Invalid request', 400
 
         author = AuthorModel(name=request_data['name'], description=request_data['description'])
         db_session.add(author)
