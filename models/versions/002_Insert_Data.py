@@ -41,20 +41,22 @@ M2M_FIXTURE = [
     {'book': 'Война и Мир', 'name': 'Толстой Л.Н.'},
 ]
 
+
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
 
     Author.insert().values(AUTHORS_FIXTURES).execute()
     Book.insert().values(BOOKS_FIXTURES).execute()
 
-    for it in  M2M_FIXTURE:
+    for it in M2M_FIXTURE:
         name = it['name']
         book = it['book']
 
-        author_id = Author.select(Author.c.name==name).execute().first()[0]
-        book_id = Book.select(Book.c.name==book).execute().first()[0]
+        author_id = Author.select(Author.c.name == name).execute().first()[0]
+        book_id = Book.select(Book.c.name == book).execute().first()[0]
 
         M2M.insert().values({'author_id': author_id, 'book_id': book_id, }).execute()
+
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine

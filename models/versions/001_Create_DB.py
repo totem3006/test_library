@@ -24,6 +24,7 @@ M2M = Table(
     Column('book_id', Integer, ForeignKey('Book.id'), primary_key=True),
 )
 
+
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
     Author.create()

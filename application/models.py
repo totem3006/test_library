@@ -61,5 +61,3 @@ class BookModel(Base):
             self.to_dict(),
             ensure_ascii=False
         ).encode('utf8')
-
-

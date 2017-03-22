@@ -9,12 +9,14 @@ from flask.views import MethodView
 from application import app
 from application.models import AuthorModel, BookModel, db_session
 
+
 @app.route('/')
 def index():
     return "Hello, World!"
 
 
 class AuthorAPI(MethodView):
+
     def get(self, author_id):
         author = AuthorModel.query.filter_by(id=author_id).first()
 
@@ -58,7 +60,6 @@ class AuthorAPI(MethodView):
             if request_data['description'] is None:
                 return 'description is not nullable', 400
             author.description = request_data['description']
-
 
         db_session.add(author)
 
@@ -105,6 +106,7 @@ class AuthorAPI(MethodView):
 
 
 class BookAPI(MethodView):
+
     def get(self, book_id):
         book = BookModel.query.filter_by(id=book_id).first()
 
@@ -134,14 +136,13 @@ class BookAPI(MethodView):
         if not request_data:
             return 'Empty request', 400
 
-
         if len(request_data) != 3 or \
-            'name' not in request_data or \
-            request_data['name'] is None or \
-            'description' not in request_data or \
-            request_data['description'] is None or \
-            'authors' not in request_data or \
-            request_data['authors'] is None:
+                'name' not in request_data or \
+                request_data['name'] is None or \
+                'description' not in request_data or \
+                request_data['description'] is None or \
+                'authors' not in request_data or \
+                request_data['authors'] is None:
             return 'Invalid request data', 400
 
         book = BookModel(name=request_data['name'], description=request_data['description'])
@@ -167,7 +168,7 @@ author_api_view = AuthorAPI.as_view(b'authors')
 app.add_url_rule(
     '/authors/new/',
     view_func=author_api_view,
-    methods=['POST',]
+    methods=['POST', ]
 )
 app.add_url_rule(
     '/authors/<int:author_id>/',

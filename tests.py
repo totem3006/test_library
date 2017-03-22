@@ -14,7 +14,9 @@ from application.models import AuthorModel
 from application.models import BookModel
 from application.models import BookAuthorM2M
 
+
 class AuthorTestCase(unittest.TestCase):
+
     def setUp(self):
         self.app = app.test_client()
         AuthorModel.query.delete()
@@ -47,7 +49,6 @@ class AuthorTestCase(unittest.TestCase):
         response = self.app.get(url, follow_redirects=True)
 
         self.assertEqual(200, response.status_code)
-
 
     def test_001_get_normal_json_validate(self):
         author = self.add_author('test_001_get_normal_json_validate')
@@ -82,7 +83,7 @@ class AuthorTestCase(unittest.TestCase):
 
     def test_004_put_user_both_fields(self):
         author = self.add_author('test_004_put_user_both_fields')
-        author_id=author.id
+        author_id = author.id
 
         url = '/authors/{id:d}/'.format(id=author.id)
         data = {'name': 'newname004', 'description': 'newdescription004'}
@@ -98,7 +99,7 @@ class AuthorTestCase(unittest.TestCase):
 
     def test_005_put_single_field(self):
         author = self.add_author('test_005_put_single_field')
-        author_id=author.id
+        author_id = author.id
 
         # update name
         url = '/authors/{id:d}/'.format(id=author.id)
@@ -129,7 +130,7 @@ class AuthorTestCase(unittest.TestCase):
     ########################################################
     def test_006_put_bad_requests_400(self):
         author = self.add_author('test_006_put_bad_requests_400')
-        author_id=author.id
+        author_id = author.id
 
         url = '/authors/{id:d}/'.format(id=author.id)
 
@@ -149,7 +150,6 @@ class AuthorTestCase(unittest.TestCase):
             self.assertIsNotNone(author)
             self.assertEqual('test_006_put_bad_requests_400', author.name)
             self.assertEqual('test_006_put_bad_requests_400', author.description)
-
 
     def test_009_put_nonexisting_author(self):
         non_existing_id = self.get_nonexisting_id(AuthorModel)
@@ -190,11 +190,11 @@ class AuthorTestCase(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
 
-
     def test_013_post_good_params_and_200(self):
         url = '/authors/new/'
 
-        data = {'name': 'test_013_post_good_params_and_200', 'description': 'test_013_post_good_params_and_200'}
+        data = {'name': 'test_013_post_good_params_and_200',
+                'description': 'test_013_post_good_params_and_200'}
         response = self.app.post(url, data=json.dumps(data), follow_redirects=True)
 
         self.assertEqual(200, response.status_code)
@@ -231,7 +231,7 @@ class AuthorTestCase(unittest.TestCase):
         self.assertEqual(400, response.status_code)
 
         author = self.add_author('test_015_non_json_for_put_and_post')
-        author_id=author.id
+        author_id = author.id
 
         # update name
         url = '/authors/{id:d}/'.format(id=author_id)
@@ -240,6 +240,7 @@ class AuthorTestCase(unittest.TestCase):
 
 
 class BookTestCase(unittest.TestCase):
+
     def setUp(self):
         self.app = app.test_client()
         AuthorModel.query.delete()
@@ -276,7 +277,7 @@ class BookTestCase(unittest.TestCase):
         return non_existing_id
 
     def test_000_get_simple_200(self):
-        authors = map(lambda x : self.add_author(x), ['000_A1', '000_A2', '000_A3'])
+        authors = map(lambda x: self.add_author(x), ['000_A1', '000_A2', '000_A3'])
         book = self.add_book('book000', authors)
 
         book_id = book.id
@@ -287,7 +288,7 @@ class BookTestCase(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
 
-        response_data  = json.loads(response.data)
+        response_data = json.loads(response.data)
 
         self.assertEqual('book000', response_data['name'])
         self.assertEqual('book000', response_data['description'])
@@ -312,11 +313,11 @@ class BookTestCase(unittest.TestCase):
         response = self.app.get(url, follow_redirects=True)
 
         self.assertEqual(200, response.status_code)
-        response_data  = json.loads(response.data)
+        response_data = json.loads(response.data)
         self.assertEqual(0, len(response_data['authors']))
 
     def test_003_delete_book_200(self):
-        authors = map(lambda x : self.add_author(x), ['003_A1', '003_A2', '003_A3'])
+        authors = map(lambda x: self.add_author(x), ['003_A1', '003_A2', '003_A3'])
         book = self.add_book('book003', authors)
         book_id = book.id
 
@@ -339,7 +340,7 @@ class BookTestCase(unittest.TestCase):
         self.assertEqual(404, response.status_code)
 
     def test_005_post_create_simple_book_200(self):
-        authors = map(lambda x : self.add_author(x), ['005_A1', '005_A2', '005_A3'])
+        authors = map(lambda x: self.add_author(x), ['005_A1', '005_A2', '005_A3'])
         authors_id = map(lambda it: it.id, authors)
         data = {
             'name': 'test_005_post_create_simple_book',
@@ -366,7 +367,7 @@ class BookTestCase(unittest.TestCase):
         self.assertItemsEqual(authors, book.authors)
 
     def test_006_post_create_bad_data(self):
-        authors = map(lambda x : self.add_author(x), ['006_A1', '006_A2', '006_A3'])
+        authors = map(lambda x: self.add_author(x), ['006_A1', '006_A2', '006_A3'])
         authors_id = map(lambda it: it.id, authors)
 
         datas = [
@@ -386,7 +387,7 @@ class BookTestCase(unittest.TestCase):
             self.assertEqual(400, response.status_code)
 
     def test_007_post_create_nonexisting_author(self):
-        authors = map(lambda x : self.add_author(x), ['007_A1', '007_A2', '007_A3'])
+        authors = map(lambda x: self.add_author(x), ['007_A1', '007_A2', '007_A3'])
         authors_id = map(lambda it: it.id, authors)
         nonexising_author_id = self.get_nonexisting_id(AuthorModel)
         authors_id.append(nonexising_author_id)
