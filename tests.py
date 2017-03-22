@@ -644,6 +644,10 @@ class LibraryTestCase(unittest.TestCase):
         response = self.app.get(url, follow_redirects=True)
         self.assertEqual(404, response.status_code)
 
+        url = '/library/0/'
+        response = self.app.get(url, follow_redirects=True)
+        self.assertEqual(404, response.status_code)
+
 
 class LibraryTestCase(unittest.TestCase):
 

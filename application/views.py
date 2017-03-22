@@ -202,8 +202,12 @@ class BookAPI(MethodView):
 @app.route('/library/', methods=['GET', ])
 @app.route('/library/<int:page>/', methods=['GET', ])
 def library_api(page=1):
+    if page <= 0:
+        return 'Page number should be a positive number', 404
+
+    pagination_page = page - 1
     response = BookModel.query.order_by('id')\
-                              .offset((page - 1) * config.LIBRARY_PAGE_SIZE)\
+                              .offset(pagination_page * config.LIBRARY_PAGE_SIZE)\
                               .limit(config.LIBRARY_PAGE_SIZE)
 
     if not response.count():
