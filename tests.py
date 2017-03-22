@@ -602,7 +602,7 @@ class LibraryTestCase(unittest.TestCase):
         url = '/library/'
         response = self.app.get(url, follow_redirects=True)
 
-        self.assertEqual(200 ,response.status_code)
+        self.assertEqual(200, response.status_code)
 
         response_data = json.loads(response.data)
 
@@ -617,19 +617,19 @@ class LibraryTestCase(unittest.TestCase):
 
         url = '/library/'
         response = self.app.get(url, follow_redirects=True)
-        self.assertEqual(200 ,response.status_code)
+        self.assertEqual(200, response.status_code)
         response_data = json.loads(response.data)
         self.assertEqual(config.LIBRARY_PAGE_SIZE, len(response_data))
 
         url = '/library/1/'
         response = self.app.get(url, follow_redirects=True)
-        self.assertEqual(200 ,response.status_code)
+        self.assertEqual(200, response.status_code)
         response_data = json.loads(response.data)
         self.assertEqual(config.LIBRARY_PAGE_SIZE, len(response_data))
 
         url = '/library/2/'
         response = self.app.get(url, follow_redirects=True)
-        self.assertEqual(200 ,response.status_code)
+        self.assertEqual(200, response.status_code)
         response_data = json.loads(response.data)
         self.assertEqual(1, len(response_data))
 
@@ -639,7 +639,7 @@ class LibraryTestCase(unittest.TestCase):
 
         url = '/library/2/'
         response = self.app.get(url, follow_redirects=True)
-        self.assertEqual(404 ,response.status_code)
+        self.assertEqual(404, response.status_code)
 
 if __name__ == '__main__':
     unittest.main()
