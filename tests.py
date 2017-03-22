@@ -6,10 +6,13 @@ import unittest
 import tempfile
 import json
 import random
+import datetime
+import timeout_decorator
 
 import config
 
 from application import app
+from application import cache
 from application.models import db_session
 from application.models import AuthorModel
 from application.models import BookModel
@@ -640,6 +643,76 @@ class LibraryTestCase(unittest.TestCase):
         url = '/library/2/'
         response = self.app.get(url, follow_redirects=True)
         self.assertEqual(404, response.status_code)
+
+
+class LibraryTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.app = app.test_client()
+        AuthorModel.query.delete()
+        BookModel.query.delete()
+        BookAuthorM2M.query.delete()
+        cache.clear()
+
+    def tearDown(self):
+        pass
+
+    def add_author(self, test_name):
+        author = AuthorModel(name=test_name, description=test_name)
+        db_session.add(author)
+        db_session.commit()
+
+        return author
+
+    def add_book(self, test_name, authors=[]):
+        book = BookModel(name=test_name, description=test_name)
+        db_session.add(book)
+        db_session.commit()
+
+        for author in authors:
+            book.authors.append(author)
+
+        return book
+
+    def get_nonexisting_id(self, ModelClass):
+        try:
+            last_item = ModelClass.query.order_by('id')[-1]
+            non_existing_id = last_item.id + 1
+        except IndexError:
+            non_existing_id = 1
+
+        return non_existing_id
+
+    def test_000_simple_call(self):
+        authors = map(lambda x: self.add_author(x), ['000_A1', '000_A2', '000_A3'])
+        book = self.add_book('book000', authors)
+
+        url = '/statistics/'
+
+        response = self.app.get(url, follow_redirects=True)
+
+        self.assertEqual(200, response.status_code)
+
+    @timeout_decorator.timeout(10, timeout_exception=StopIteration)
+    def test_000_1000_calls(self):
+        authors = map(lambda x: self.add_author(x), ['000_A1', '000_A2', '000_A3'])
+        book = self.add_book('book000', authors)
+
+        url = '/statistics/'
+
+        begin = datetime.datetime.now()
+
+        for it in xrange(1000):
+            response = self.app.get(url, follow_redirects=True)
+            self.assertEqual(200, response.status_code)
+
+        end = datetime.datetime.now()
+
+        timedelta = end - begin
+
+        self.assertEqual(0, timedelta.days)
+        self.assertTrue(timedelta.seconds < 5)
+
 
 if __name__ == '__main__':
     unittest.main()

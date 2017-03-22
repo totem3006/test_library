@@ -3,13 +3,14 @@
 from __future__ import unicode_literals
 
 import json
-
+import time
 import config
 
 from flask import request
 from flask.views import MethodView
 
 from application import app
+from application import cache
 from application.models import AuthorModel, BookModel, db_session
 
 
@@ -225,6 +226,23 @@ def library_api(page=1):
         ensure_ascii=False
     ).encode('utf8')
 
+
+# this method contains heave calculation
+@cache.cached(timeout=60, key_prefix='calculate_statictic')
+def calculate_statictic():
+    books_count = BookModel.query.count()
+    authors_count = AuthorModel.query.count()
+
+    time.sleep(2.0)
+
+    return {'books': books_count, 'authors': authors_count, }
+
+
+@app.route('/statistics/', methods=['GET', ])
+def statistic_api():
+    stats = calculate_statictic()
+
+    return json.dumps(stats)
 
 author_api_view = AuthorAPI.as_view(b'authors')
 app.add_url_rule(
