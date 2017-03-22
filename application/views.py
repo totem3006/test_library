@@ -16,6 +16,8 @@ from application.models import BookModel
 from application.models import db_session
 from application.forms import AuthorCreateForm
 from application.forms import AuthorUpdateForm
+from application.forms import BookCreateForm
+from application.forms import BookUpdateForm
 
 
 @app.route('/')
@@ -125,18 +127,14 @@ class BookAPI(MethodView):
         try:
             request_data = json.loads(request.data)
         except ValueError:
-            return 'Invalid request body', 400
+            return 'Request body is not a valid JSON', 400
 
-        if not request_data:
-            return 'Empty request', 400
+        if len(request_data) != 3:
+            return 'Invalid request data', 400
 
-        if len(request_data) != 3 or \
-                'name' not in request_data or \
-                request_data['name'] is None or \
-                'description' not in request_data or \
-                request_data['description'] is None or \
-                'authors' not in request_data or \
-                request_data['authors'] is None:
+        form = BookCreateForm.from_json(request_data)
+
+        if not form.validate():
             return 'Invalid request data', 400
 
         book = BookModel(name=request_data['name'], description=request_data['description'])
@@ -161,11 +159,12 @@ class BookAPI(MethodView):
         except ValueError:
             return 'Request body is not a valid JSON', 400
 
-        if not request_data or \
-                ('name' in request_data and request_data['name'] is None) or \
-                ('description' in request_data and request_data['description'] is None) or \
-                ('authors' in request_data and request_data['authors'] is None) or \
-                (set(request_data.keys()) - {'name', 'description', 'authors'}):
+        if set(request_data.keys()) - {'name', 'description', 'authors'}:
+            return 'Invalid request data', 400
+
+        form = BookUpdateForm.from_json(request_data)
+
+        if not form.validate():
             return 'Invalid request data', 400
 
         new_authors = []
