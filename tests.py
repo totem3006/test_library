@@ -383,8 +383,10 @@ class BookTestCase(unittest.TestCase):
         url = '/book/new/'
 
         for data in datas:
+            books_count_before = BookModel.query.count()
             response = self.app.post(url, data=json.dumps(data), follow_redirects=True)
             self.assertEqual(400, response.status_code)
+            self.assertEqual(books_count_before, BookModel.query.count())
 
     def test_007_post_create_nonexisting_author(self):
         authors = map(lambda x: self.add_author(x), ['007_A1', '007_A2', '007_A3'])
@@ -408,6 +410,152 @@ class BookTestCase(unittest.TestCase):
         self.assertEqual(3, AuthorModel.query.count())
         self.assertEqual(0, BookModel.query.count())
         self.assertEqual(0, BookAuthorM2M.query.count())
+
+    def test_008_post_invalid_json_body(self):
+        data = 'Its\' not a valid JSON \", really]'
+        url = '/book/new/'
+
+        response = self.app.post(url, data=data, follow_redirects=True)
+
+        self.assertEqual(400, response.status_code)
+
+    def test_009_put_simple_200(self):
+        old_authors = map(lambda x: self.add_author(x), ['009_A1', '009_A2', '009_A3'])
+        book = self.add_book('book009', old_authors)
+        book_id = book.id
+
+        new_authors = map(lambda x: self.add_author(x), ['009_NEW_A1', '009_NEW_A2'])
+        new_authors_ids = map(lambda x: x.id, new_authors)
+
+        url = '/book/{id:d}/'.format(id=book_id)
+        data = {
+            'name': 'new_book009_name',
+            'description': 'new_book009_description',
+            'authors': new_authors_ids
+        }
+
+        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+        self.assertEqual(200, response.status_code)
+
+        updated_book_object = BookModel.query.filter_by(id=book_id).first()
+        self.assertIsNotNone(updated_book_object)
+        self.assertEqual('new_book009_name', updated_book_object.name)
+        self.assertEqual('new_book009_description', updated_book_object.description)
+        self.assertEqual(len(new_authors), len(updated_book_object.authors))
+        self.assertItemsEqual(new_authors, updated_book_object.authors)
+
+    def test_010_put_single_field(self):
+        old_authors = map(lambda x: self.add_author(x), ['010_A1', '010_A2', '010_A3'])
+
+        # check name
+        book1 = self.add_book('book010_1', old_authors)
+        book_id = book1.id
+        url = '/book/{id:d}/'.format(id=book_id)
+        data = {
+            'name': 'new_book010_name',
+        }
+        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+        self.assertEqual(200, response.status_code)
+        db_session.refresh(book1)
+        self.assertEqual('new_book010_name', book1.name)
+        self.assertEqual('book010_1', book1.description)
+        self.assertItemsEqual(book1.authors, old_authors)
+
+        # check description
+        book2 = self.add_book('book010_2', old_authors)
+        book_id = book2.id
+        url = '/book/{id:d}/'.format(id=book_id)
+        data = {
+            'description': 'new_book010_description',
+        }
+        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+        self.assertEqual(200, response.status_code)
+        db_session.refresh(book2)
+        self.assertEqual('book010_2', book2.name)
+        self.assertEqual('new_book010_description', book2.description)
+        self.assertItemsEqual(book2.authors, old_authors)
+
+        # check authors
+        book3 = self.add_book('book010_3', old_authors)
+        new_authors = map(lambda x: self.add_author(x), ['010_A4', '010_A5', '010_A6', '010_A7'])
+        book_id = book3.id
+        url = '/book/{id:d}/'.format(id=book_id)
+        data = {
+            'authors': map(lambda x: x.id, new_authors),
+        }
+        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+        self.assertEqual(200, response.status_code)
+        db_session.refresh(book3)
+        self.assertEqual('book010_3', book3.name)
+        self.assertEqual('book010_3', book3.description)
+        self.assertEqual(len(new_authors), len(book3.authors))
+        self.assertItemsEqual(new_authors, book3.authors)
+
+    def test_011_put_incorrect_request_400(self):
+        old_authors = map(lambda x: self.add_author(x), ['011_A1', '011_A2', '011_A3'])
+
+        book = self.add_book('book012', old_authors)
+
+        datas = [
+            {},
+            {'authors': None},
+            {'name': None},
+            {'description': None},
+            {'name': '123', 'description': '123', 'authors': [], 'bad_field': '123'},
+        ]
+        url = '/book/{id:d}/'.format(id=book.id)
+
+        for data in datas:
+            response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+            self.assertEqual(400, response.status_code)
+
+    def test_012_put_not_existing_book(self):
+        not_existing_id = self.get_nonexisting_id(BookModel)
+
+        url = '/book/{id:d}/'.format(id=not_existing_id)
+        data = {'name': '123'}
+
+        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+        self.assertEqual(404, response.status_code)
+
+    def test_013_put_update_with_nonexisting_author(self):
+        old_authors = map(lambda x: self.add_author(x), ['013_A1', '013_A2', '013_A3'])
+        new_authors = map(lambda x: self.add_author(x), ['013_A4', '013_A5', '013_A6', '013_A7'])
+        new_authors_ids = map(lambda it: it.id, new_authors)
+        new_authors_ids.append(self.get_nonexisting_id(AuthorModel))
+
+        book = self.add_book('book013', old_authors)
+        url = '/book/{id:d}/'.format(id=book.id)
+        data = {
+            'authors': new_authors_ids,
+        }
+
+        old_m2m_count = BookAuthorM2M.query.count()
+
+        response = self.app.put(url, data=json.dumps(data), follow_redirects=True)
+
+        self.assertEqual(404, response.status_code)
+        self.assertEqual(len(old_authors) + len(new_authors), AuthorModel.query.count())
+        self.assertEqual(1, BookModel.query.count())
+        self.assertEqual(old_m2m_count, BookAuthorM2M.query.count())
+
+    def test_014_put_invalid_json(self):
+        old_authors = map(lambda x: self.add_author(x), ['014_A1', '014_A2', '014_A3'])
+        book = self.add_book('book014', old_authors)
+
+        url = '/book/{id:d}/'.format(id=book.id)
+        data = 'Its\' not a valid JSON \", really]'
+
+        response = self.app.put(url, data=data, follow_redirects=True)
+
+        self.assertEqual(400, response.status_code)
+
 
 if __name__ == '__main__':
     unittest.main()

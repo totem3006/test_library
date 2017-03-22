@@ -162,7 +162,48 @@ class BookAPI(MethodView):
         return str(book.id), 200
 
     def put(self, book_id):
-        return '', 500
+        try:
+            request_data = json.loads(request.data)
+        except ValueError:
+            return 'Request body is not a valid JSON', 400
+
+        if not request_data or \
+                ('name' in request_data and request_data['name'] is None) or \
+                ('description' in request_data and request_data['description'] is None) or \
+                ('authors' in request_data and request_data['authors'] is None) or \
+                (set(request_data.keys()) - {'name', 'description', 'authors'}):
+            return 'Invalid request data', 400
+
+        new_authors = []
+        if 'authors' in request_data:
+            for author_id in request_data['authors']:
+                new_author = AuthorModel.query.filter_by(id=author_id).first()
+                if new_author is None:
+                    msg = 'Author with id = %d is noe existing' % author_id
+                    return msg, 404
+
+                new_authors.append(new_author)
+
+        book = BookModel.query.filter_by(id=book_id).first()
+
+        if book is None:
+            msg = 'Book with id=%d doesn\'t exist' % book_id
+            return msg, 404
+
+        db_session.add(book)
+
+        if 'name' in request_data:
+            book.name = request_data['name']
+
+        if 'description' in request_data:
+            book.description = request_data['description']
+
+        if 'authors' in request_data:
+            book.authors = new_authors
+
+        db_session.commit()
+
+        return 'Ok', 200
 
 author_api_view = AuthorAPI.as_view(b'authors')
 app.add_url_rule(
